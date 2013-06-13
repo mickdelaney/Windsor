@@ -22,6 +22,7 @@ namespace CastleTests
 	using Castle.Windsor.Tests.Facilities.TypedFactory.Factories;
 
 	using CastleTests.Components;
+	using CastleTests.ContainerExtensions;
 
 	using NUnit.Framework;
 
@@ -110,6 +111,28 @@ namespace CastleTests
 			var b = childcontainer.Resolve<B>("B");
 			Assert.IsNotNull(b);
 		}
+
+        [Test]
+        public void DisposeChildContainerComponentsResolvedAgainstParentContainer()
+        {
+            IWindsorContainer parentContainer = new WindsorContainer();
+            //parentContainer.Kernel.ReleasePolicy = new MyCustomReleasePolicy();
+
+            IWindsorContainer childContainer = new WindsorContainer();
+            parentContainer.AddChildContainer(childContainer);
+            parentContainer.Register(Component.For<DisposableFoo>().ImplementedBy<DisposableFoo>());
+            
+            var first = childContainer.Resolve<DisposableFoo>();
+            Assert.IsNotNull(first);
+            childContainer.Release(first);
+            Assert.Equals(1, DisposableFoo.DisposedCount);
+            
+            var second = childContainer.Resolve<DisposableFoo>();
+            Assert.IsNotNull(second);
+            childContainer.Dispose();
+            Assert.Equals(2, DisposableFoo.DisposedCount);
+        }
+
 
 		[Test]
 		public void ResolveAgainstParentContainerWithProperty()
